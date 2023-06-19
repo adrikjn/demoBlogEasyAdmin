@@ -1,0 +1,136 @@
+php bin/console make:user
+    -choisir un nom user....User par défaut
+    -stocker user date dans le BDD
+    -choisir le propriété unique que l'on veut: email(Vincent)
+    -hash mdp
+                                |
+                                |
+                                V 
+Vérifiez que ces 2 sont implémenté dans User.php
+    use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+    use Symfony\Component\Security\Core\User\UserInterface;       
+                                 |
+                                 |
+                                 V 
+php bin/console make:entity User                         
+    -entrer les propriété de la table BDD <<User>>
+    - Nous avons ajouté firstName, lastName & userName (en camelCase)
+    *N'ajoute pas email & password car ceux sont crées lors de la création de make:user
+                                |
+                                |
+                                V 
+                                
+#################################  MIGRATION ##########################################
+################### php bin/console make:migration -> php bin/console d:m:m   #########
+#######################################################################################
+
+
+on va créer le formulaire de registration AUTOMATIQUEMENT
+symfone console make:registration-form
+Il va automatiquement comprendre qu'on parle de l'User (App\Entity\User)
+UniqueEntity = Email / yes 
+Vérify account : on a pas de mailer donc on met non
+Auto connexion après la création ducompte : NON
+Sélectionner le lieu de redirection (13 ici car Home)
+
+Ajout dans le registrationformtype les champs qui manquent (username, firstname.. ceux qu'on a mis dans les tables)
+Remplacer le PasswordType::class par RepeatedType::class ligne 33
+Rajoute cette ligne en dessous 
+                   'type' => PasswordType::class,
+                'first_options' => ['label' => 'mot de passe'],
+                'second_options' => ['label' => 'confirmer le mot de passe'],
+                'invalid_message' => 'Les mots de passes ne correspondent pas',
+
+                Mettre le regex en dessous de new length ici
+                new Regex([ (class importé)
+                    'pattern' => '/^(?=.*[a-z])(?=.*\d)(?=.*[@$!%#*?&])[A-Za-z\d@$!%#*?&]{6,}$/',
+                    'match' => true,
+                    "message" => 'Votre mot de passe doit contenir au moins un chiffre, un caractère spécial (@$!#%*?&), une lettre minuscule et une lettre majuscule !'
+                ]),
+
+Faire afficher dans le register.twig le username firstname etc avec des label 
+
+
+
+LOGIN MAINTENANT  
+
+symfony console make:auth
+Login form authenticator (1)
+Choose class name - LoginFormAuthenticator
+On garde le controlelr security
+oui on veut logout*
+
+Dans loginformauthenticator :
+!!!! COMMENT CETTE LIGNE 
+        throw new \Exception('TODO: provide a valid redirect inside '.__FILE__);
+
+!!!! DECOMMENTER
+        return new RedirectResponse($this->urlGenerator->generate('home'));
+et mettre la route que l'on souhaite
+
+
+PARTIE ADMIN (SECURITE)
+
+On créer le controller : symfony console make:controller AdminController
+
+    On a rajouter dans la bdd dans roles ["ROLE_ADMIN"] pour le 1er user (admin)
+
+    On a décommenté le role_admin path/admin dans security.yaml 
+    et l'acccess denied etc.. voir fichier security.yaml
+
+    Fichier base : 
+        {% if is_granted("ROLE_ADMIN") %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">BackOffice</a>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="{{ path('new_article') }}">Ajouter un article</a>
+          </div>
+        </li>
+        {% endif %}
+
+        comment on cache pour les non admin 
+
+
+Si vous n'êtes pas admin vous n'avez pas accès au URL comment par /admin :
+ role_hierarchy:
+        ROLE_ADMIN: ROLE_USER
+    # Easy way to control access for large sections of your site
+    # Note: Only the *first* access control that matches will be used
+    access_control:
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        # - { path: ^/profile, roles: ROLE_USER }
+    access_denied_url: /
+
+    cONFIGurer security.yaml comme ça pour la sécurité elle renvoie automatiquement sur login
+
+
+
+Liéer le user au commentaire :: 
+
+-1 Remmettre symfony make:entity Comment (il va dire elle existe déja)
+-2 Ajoute new properties
+-3 User puis relation / puis related to User
+-4 ManyToOne car each comment relate to has one User / Each User can relate to can have many comments Objects (meilleur choix)
+-5 No car si tu commentes faut un message
+-6- Pour accéder au commentaire à partir de l'user : Yes  //  $user->getComments()
+-7 On garde le même nom 
+-8 Message orphelin = yes
+-9 entré
+-10 On supprime les valeurs dans la BDD (truncate ou drop via la BDD) car on avait des fixtures 
+-11 symfony console make:migration 
+-12 symfony console d:m:m
+
+
+Création du formulaire : 
+
+symfony console make:form CommentType
+On le bound à Comment
+On commente les 3 champs dans le CommentType Car dynamique :         // ->add('createdAt')
+                                                                    // ->add('article')
+                                                                    // ->add('user')
+On fait la partie du controller avec les setters et getter etc regarder appcontroler dans le show:
+
+On peut faire le twig regarder show twig
+
+
+symfony new NOM --webapp
