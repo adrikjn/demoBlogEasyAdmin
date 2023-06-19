@@ -44,7 +44,11 @@ class UserCrudController extends AbstractCrudController
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
         // On vérifie si i ly'a l'id afin de ne pas modifier le mot de passe si il y'a l'ID
+        // *On veut pouvoir hasher le password à la création car on cache le password à la modification
+        // * On vérifie qu'il y'ait pas d'id dans l'objet actuellement lié au formulaire
+        // * Doonc on est en création
         if (!$entityInstance->getId()) {
+            // On set le password dans l'objet lié au formulaire et d'abord on le hash
             $entityInstance->setPassword(
                 $this->hasher->hashPassword(
                     $entityInstance,

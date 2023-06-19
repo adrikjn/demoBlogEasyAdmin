@@ -17,7 +17,7 @@
 				dans la catégorie {{ article.category.title }}
 			</div>
 			<div class="content">
-				<img class="img-fluid" src="{{article.image}}" alt="">
+				   <img class="img-fluid" src="{{ asset("images/article/" ~ article.image) }}" alt="">
 				<div class="py-3 px-5" style="text-align: justify;">{{ article.content}}</div>
 
 			</div>
